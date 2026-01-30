@@ -4,6 +4,6 @@ This package provides tools for analyzing iOS test suites, finding orphaned test
 inconsistent naming, overused identifiers, and more.
 """
 
-__version__ = "0.1.0"
+__version__ = "2.0.0"
 
 __all__ = ["__version__"]
