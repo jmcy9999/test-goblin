@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iOS Test Suite Analysis Report</title>
+    <style>
+        :root {
+            --primary: #007AFF;
+            --success: #34C759;
+            --warning: #FF9500;
+            --danger: #FF3B30;
+            --bg: #f5f5f7;
+            --card-bg: #ffffff;
+            --text: #1d1d1f;
+            --text-secondary: #86868b;
+            --border: #d2d2d7;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text',
+                         'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+            padding: 2rem;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+        h1 { font-size: 2.5rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .meta { color: var(--text-secondary); font-size: 0.9rem; }
+        .meta code {
+            background: var(--bg);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        .summary-grid.issue-row { margin-bottom: 0.75rem; }
+        .summary-grid.info-row {
+            margin-bottom: 2rem;
+        }
+        .summary-grid.info-row .summary-card {
+            padding: 1rem;
+        }
+        .summary-grid.info-row .value {
+            font-size: 1.5rem;
+        }
+        .summary-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .summary-card.issue-card {
+            border-left: 4px solid var(--border);
+        }
+        .summary-card.issue-card.danger {
+            border-left-color: var(--danger);
+        }
+        .summary-card.issue-card.danger .value { color: var(--danger); }
+        .summary-card.issue-card.warning {
+            border-left-color: var(--warning);
+        }
+        .summary-card.issue-card.warning .value { color: var(--warning); }
+        .summary-card.issue-card.success {
+            border-left-color: var(--success);
+        }
+        .summary-card.issue-card.success .value { color: var(--success); }
+        .summary-card .value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        .summary-card .label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-top: 0.25rem;
+        }
+        section {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--primary);
+        }
+        h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin: 2rem 0 0.75rem 0;
+            padding-top: 1.5rem;
+            color: var(--text);
+        }
+        h3:first-of-type {
+            margin-top: 0;
+            padding-top: 0;
+        }
+        .section-divider {
+            width: 80px;
+            height: 1px;
+            background: var(--border);
+            margin: 2rem auto;
+        }
+        h4 {
+            margin-top: 1.5rem;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+        }
+        th, td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        th {
+            background: var(--bg);
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+        }
+        tr:hover { background: var(--bg); }
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .stat-row:last-child { border-bottom: none; }
+        .stat-label { color: var(--text-secondary); }
+        .stat-value { font-weight: 600; }
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        .badge-success { background: #d1f7dd; color: #1a7f37; }
+        .badge-warning { background: #fff3cd; color: #856404; }
+        .badge-danger { background: #fee2e2; color: #991b1b; }
+        .badge-info { background: #dbeafe; color: #1e40af; }
+        .recommendation {
+            padding: 1rem 1.25rem;
+            margin: 0.75rem 0;
+            border-left: 4px solid var(--warning);
+            background: #fffbeb;
+            border-radius: 0 8px 8px 0;
+        }
+        .recommendation.critical {
+            border-left-color: var(--danger);
+            background: #fef2f2;
+        }
+        .recommendation h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        .recommendation ul {
+            margin: 0.5rem 0 0 1.5rem;
+            color: var(--text-secondary);
+        }
+        .recommendation li { margin: 0.25rem 0; }
+        .recommendation code {
+            background: rgba(0,0,0,0.05);
+            padding: 0.1rem 0.4rem;
+            border-radius: 3px;
+            font-size: 0.85rem;
+        }
+        .file-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        .file-tag {
+            background: var(--bg);
+            padding: 0.25rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-family: 'SF Mono', Monaco, monospace;
+        }
+        .json-ref {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            margin-top: 0.75rem;
+        }
+        .json-ref a {
+            background: var(--bg);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            color: var(--primary);
+            text-decoration: none;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 0.85rem;
+        }
+        .json-ref a:hover {
+            text-decoration: underline;
+            background: #e8e8ed;
+        }
+        .progress-bar {
+            height: 8px;
+            background: var(--border);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 0.5rem 0;
+        }
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s;
+        }
+        .progress-fill.good { background: var(--success); }
+        .progress-fill.warning { background: var(--warning); }
+        .progress-fill.danger { background: var(--danger); }
+        .naming-category {
+            margin: 1rem 0;
+            padding: 1rem;
+            background: var(--bg);
+            border-radius: 8px;
+        }
+        .naming-category h4 {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+        .toc {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .toc h2 {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        .toc ul {
+            list-style: none;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem 1.5rem;
+        }
+        .toc a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .toc a:hover { text-decoration: underline; }
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+        .note {
+            font-style: italic;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+        </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>iOS Test Suite Analysis Report</h1>
+            <p class="meta">
+                Generated: 2026-01-30 01:11 UTC<br>
+                Project: <code>dummy_project</code>
+            </p>
+        </header>
+        <div class="summary-grid issue-row">
+        <div class="summary-card issue-card danger">
+            <div class="value">16</div>
+            <div class="label">Naming Issues</div>
+        </div>
+        <div class="summary-card issue-card danger">
+            <div class="value">431</div>
+            <div class="label">Orphaned Tests</div>
+        </div>
+        <div class="summary-card issue-card warning">
+            <div class="value">3</div>
+            <div class="label">Large Files</div>
+        </div></div>
+        <div class="summary-grid info-row">
+        <div class="summary-card info-card">
+            <div class="value">505</div>
+            <div class="label">Tests</div>
+        </div>
+        <div class="summary-card info-card">
+            <div class="value">58</div>
+            <div class="label">Test Files</div>
+        </div>
+        <div class="summary-card info-card">
+            <div class="value">15</div>
+            <div class="label">Test Plans</div>
+        </div></div>
+        
+        <nav class="toc">
+            <h2>Contents</h2>
+            <ul><li><a href="#test-inventory">Test Inventory</a></li><li><a href="#accessibility">Accessibility IDs</a></li><li><a href="#test-plans">Test Plans</a></li><li><a href="#recommendations">Recommendations</a></li></ul>
+        </nav>
+        
+        <section id="test-inventory">
+            <h2>Test Inventory</h2>
+            <h3>Overview</h3>
+            <div class="stat-row">
+                <span class="stat-label">Total Test Files</span>
+                <span class="stat-value">58</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Total Test Methods</span>
+                <span class="stat-value">505</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Tests per File</span>
+                <span class="stat-value">
+                    1 min, 80 max, 8.7 avg, 3.0 median
+                </span>
+            </div>
+            <p class="json-ref">Complete data: <a href="test_inventory.json">test_inventory.json</a></p>
+            
+            <div class="section-divider"></div>
+            <h3>Test File Naming</h3>
+            <div class="stat-row">
+                <span class="stat-label">Expected Pattern</span>
+                <span class="stat-value"><code>[Feature]Tests.swift</code></span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Consistency</span>
+                <span class="stat-value">72.4%</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill warning"
+                     style="width: 72.4%"></div>
+            </div>
+            <p><strong>Files Not Following Convention (16):</strong></p>
+            <div class="naming-category">
+                <h4>Snake case (9 files)</h4>
+                <div class="file-list"><span class="file-tag">LoginFlow_Test1.swift</span> <span class="file-tag">LoginFlow_Test2.swift</span> <span class="file-tag">button_tests.swift</span> <span class="file-tag">checkout_tests.swift</span> <span class="file-tag">field_tests.swift</span> <span class="note">...and 4 more</span></div>
+            </div>
+            <div class="naming-category">
+                <h4>Flow files (1 files)</h4>
+                <div class="file-list"><span class="file-tag">CheckoutFlows.swift</span></div>
+            </div>
+            <div class="naming-category">
+                <h4>Validation files (3 files)</h4>
+                <div class="file-list"><span class="file-tag">CheckoutValidations.swift</span> <span class="file-tag">FeatureValidation.swift</span> <span class="file-tag">SearchValidation.swift</span></div>
+            </div>
+            <div class="naming-category">
+                <h4>Scenario files (2 files)</h4>
+                <div class="file-list"><span class="file-tag">SearchScenarios.swift</span> <span class="file-tag">TestScenarios.swift</span></div>
+            </div>
+            <div class="naming-category">
+                <h4>Other (1 files)</h4>
+                <div class="file-list"><span class="file-tag">testCase42.swift</span></div>
+            </div><p class="json-ref">See <a href="test_inventory.json">test_inventory.json</a> → <code>test_files</code> for complete list</p>
+            
+            <div class="section-divider"></div>
+            <h3>Test Method Naming</h3>
+            <div class="stat-row">
+                <span class="stat-label">Expected Style</span>
+                <span class="stat-value"><code>camelCase</code></span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Consistency</span>
+                <span class="stat-value">99.0%</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill good"
+                     style="width: 99.0%"></div>
+            </div>
+            <p class="note">Style breakdown: BDD: 2 | camelCase: 500 | snake_case: 3</p>
+            
+                <h4>Methods Not Following Convention
+                    <span class="badge badge-warning">5</span>
+                </h4>
+                <table>
+                    <thead>
+                        <tr><th>Method</th><th>Detected Style</th></tr>
+                    </thead>
+                    <tbody><tr>
+                        <td><code>test_user_can_logout</code></td>
+                        <td>snake_case</td>
+                    </tr><tr>
+                        <td><code>test_product_added_to_cart</code></td>
+                        <td>snake_case</td>
+                    </tr><tr>
+                        <td><code>test_checkout_completes</code></td>
+                        <td>snake_case</td>
+                    </tr><tr>
+                        <td><code>testGivenValidUser_WhenLoggingIn_ThenSuccess</code></td>
+                        <td>BDD</td>
+                    </tr><tr>
+                        <td><code>testGivenEmptyCart_WhenAddingProduct_ThenCartUpdates</code></td>
+                        <td>BDD</td>
+                    </tr></tbody>
+                </table>
+                
+                <p class="json-ref">See <a href="test_inventory.json">test_inventory.json</a> →
+                   <code>method_naming_patterns.non_compliant_methods</code> for complete list</p>
+
+            <div class="section-divider"></div>
+            <h3>Largest Test Files</h3>
+            <table>
+                <thead>
+                    <tr><th>File</th><th>Tests</th><th>Classes</th></tr>
+                </thead>
+                <tbody><tr>
+                <td><code>SearchTests.swift</code></td>
+                <td>80</td>
+                <td>SearchTests</td>
+            </tr><tr>
+                <td><code>LoginTests.swift</code></td>
+                <td>39</td>
+                <td>LoginTests</td>
+            </tr><tr>
+                <td><code>LoginValidationTests.swift</code></td>
+                <td>34</td>
+                <td>LoginValidationTests</td>
+            </tr><tr>
+                <td><code>UserAuthenticationTests.swift</code></td>
+                <td>30</td>
+                <td>UserAuthenticationTests</td>
+            </tr><tr>
+                <td><code>DashboardTests.swift</code></td>
+                <td>25</td>
+                <td>DashboardTests</td>
+            </tr><tr>
+                <td><code>search_tests.swift</code></td>
+                <td>25</td>
+                <td>search_tests</td>
+            </tr><tr>
+                <td><code>CartTests.swift</code></td>
+                <td>22</td>
+                <td>CartTests</td>
+            </tr><tr>
+                <td><code>ProductListTests.swift</code></td>
+                <td>20</td>
+                <td>ProductListTests</td>
+            </tr><tr>
+                <td><code>checkout_tests.swift</code></td>
+                <td>18</td>
+                <td>checkout_tests</td>
+            </tr><tr>
+                <td><code>LoginFlow_Test1.swift</code></td>
+                <td>15</td>
+                <td>LoginFlow_Test1</td>
+            </tr><tr>
+                <td><code>LoginFlow_Test2.swift</code></td>
+                <td>15</td>
+                <td>LoginFlow_Test2</td>
+            </tr><tr>
+                <td><code>ProfileTests.swift</code></td>
+                <td>15</td>
+                <td>ProfileTests</td>
+            </tr><tr>
+                <td><code>product_detail_tests.swift</code></td>
+                <td>15</td>
+                <td>product_detail_tests</td>
+            </tr><tr>
+                <td><code>OrderHistoryTests.swift</code></td>
+                <td>12</td>
+                <td>OrderHistoryTests</td>
+            </tr><tr>
+                <td><code>NotificationTests.swift</code></td>
+                <td>10</td>
+                <td>NotificationTests</td>
+            </tr><tr>
+                <td><code>PaymentTests.swift</code></td>
+                <td>8</td>
+                <td>PaymentTests</td>
+            </tr><tr>
+                <td><code>WishlistTests.swift</code></td>
+                <td>8</td>
+                <td>WishlistTests</td>
+            </tr><tr>
+                <td><code>MixedNamingTests.swift</code></td>
+                <td>7</td>
+                <td>MixedNamingTests</td>
+            </tr><tr>
+                <td><code>ReturnsTests.swift</code></td>
+                <td>5</td>
+                <td>ReturnsTests</td>
+            </tr><tr>
+                <td><code>ReviewTests.swift</code></td>
+                <td>5</td>
+                <td>ReviewTests</td>
+            </tr></tbody>
+            </table>
+            <p class="note">Showing top 20 of 58 files</p>
+            <p class="json-ref">See <a href="test_inventory.json">test_inventory.json</a> →
+               <code>test_files</code> for complete list</p>
+        </section>
+        
+        <section id="accessibility">
+            <h2>Accessibility Identifiers</h2>
+            <h3>Overview</h3>
+            <div class="stat-row">
+                <span class="stat-label">Total Unique IDs</span>
+                <span class="stat-value">84</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Total Usage Count</span>
+                <span class="stat-value">274</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Average Usage per ID</span>
+                <span class="stat-value">3.3</span>
+            </div>
+            <p class="json-ref">Complete data: <a href="accessibility_ids.json">accessibility_ids.json</a></p>
+
+            <div class="section-divider"></div>
+            <h3>Naming Conventions</h3>
+            <table>
+                <thead>
+                    <tr><th>Convention</th><th>Count</th><th>Examples</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>PascalCase</td>
+                        <td>10</td>
+                        <td><code>Done</code>, <code>Cancel</code>, <code>BackButton</code></td>
+                    </tr>
+                    <tr>
+                        <td>dotted.notation</td>
+                        <td>74</td>
+                        <td><code>DashboardView.WelcomeLabel</code>, <code>LoginView.UsernameField</code>, <code>LoginView.PasswordField</code></td>
+                    </tr>
+                    <tr>
+                        <td>lowercase</td>
+                        <td>0</td>
+                        <td><code>—</code></td>
+                    </tr>
+                </tbody>
+            </table>
+            <p class="json-ref">See <a href="accessibility_ids.json">accessibility_ids.json</a> →
+               <code>identifiers</code> for complete list</p>
+
+            <div class="section-divider"></div>
+            <h3>Top 20 Most Used Identifiers</h3>
+            <table>
+                <thead>
+                    <tr><th>Rank</th><th>Identifier</th><th>Usage Count</th></tr>
+                </thead>
+                <tbody>
+            <tr>
+                <td>1</td>
+                <td><code>Done</code> <span class="badge badge-danger">overused</span></td>
+                <td>150</td>
+            </tr>
+            <tr>
+                <td>2</td>
+                <td><code>Cancel</code> <span class="badge badge-warning">high usage</span></td>
+                <td>58</td>
+            </tr>
+            <tr>
+                <td>3</td>
+                <td><code>DashboardView.WelcomeLabel</code> </td>
+                <td>27</td>
+            </tr>
+            <tr>
+                <td>4</td>
+                <td><code>LoginView.UsernameField</code> </td>
+                <td>6</td>
+            </tr>
+            <tr>
+                <td>5</td>
+                <td><code>LoginView.PasswordField</code> </td>
+                <td>6</td>
+            </tr>
+            <tr>
+                <td>6</td>
+                <td><code>LoginView.ErrorLabel</code> </td>
+                <td>6</td>
+            </tr>
+            <tr>
+                <td>7</td>
+                <td><code>LoginView.SubmitButton</code> </td>
+                <td>3</td>
+            </tr>
+            <tr>
+                <td>8</td>
+                <td><code>LoginView.RememberMeToggle</code> </td>
+                <td>3</td>
+            </tr>
+            <tr>
+                <td>9</td>
+                <td><code>LoginView.ForgotPasswordButton</code> </td>
+                <td>1</td>
+            </tr>
+            <tr>
+                <td>10</td>
+                <td><code>LoginView.SignUpButton</code> </td>
+                <td>1</td>
+            </tr>
+            <tr>
+                <td>11</td>
+                <td><code>DashboardView.SearchButton</code> </td>
+                <td>1</td>
+            </tr>
+            <tr>
+                <td>12</td>
+                <td><code>BackButton</code> </td>
+                <td>1</td>
+            </tr>
+            <tr>
+                <td>13</td>
+                <td><code>LoginView.TouchIDButton</code> </td>
+                <td>1</td>
+            </tr>
+            <tr>
+                <td>14</td>
+                <td><code>LoginView.SignInButton</code> </td>
+                <td>1</td>
+            </tr>
+            <tr>
+                <td>15</td>
+                <td><code>LoginView.SupportButton</code> </td>
+                <td>1</td>
+            </tr>
+            <tr>
+                <td>16</td>
+                <td><code>LoginView.TermsButton</code> </td>
+                <td>1</td>
+            </tr>
+            <tr>
+                <td>17</td>
+                <td><code>LoginView.PrivacyButton</code> </td>
+                <td>1</td>
+            </tr>
+            <tr>
+                <td>18</td>
+                <td><code>LoginView.EmailField</code> </td>
+                <td>1</td>
+            </tr>
+            <tr>
+                <td>19</td>
+                <td><code>LoginView.SocialLabel</code> </td>
+                <td>1</td>
+            </tr>
+            <tr>
+                <td>20</td>
+                <td><code>LoginView.TitleLabel</code> </td>
+                <td>1</td>
+            </tr></tbody>
+            </table>
+            <p class="note">Showing top 20 of 84 identifiers</p>
+            <p class="json-ref">See <a href="accessibility_ids.json">accessibility_ids.json</a> →
+               <code>identifiers</code> for complete list</p>
+            
+            <h3>Warning: Potentially Generic IDs</h3>
+            <p>The following IDs are used very frequently and may be too generic:</p>
+            <p><code>Done</code> (150 uses), <code>Cancel</code> (58 uses)</p>
+            
+            <div class="section-divider"></div>
+            <h3>Unused Identifiers
+                <span class="badge badge-warning">61</span>
+            </h3>
+            <p>The following identifiers are defined in the codebase but never used in tests:</p>
+            <table>
+                <thead>
+                    <tr><th>Identifier</th><th>Defined In</th></tr>
+                </thead>
+                <tbody><tr>
+                    <td><code>LoginView.BiometricButton</code></td>
+                    <td>AccessibilityIdentifiers.swift</td>
+                </tr><tr>
+                    <td><code>DashboardView.CartButton</code></td>
+                    <td>AccessibilityIdentifiers.swift</td>
+                </tr><tr>
+                    <td><code>DashboardView.ProfileButton</code></td>
+                    <td>AccessibilityIdentifiers.swift</td>
+                </tr><tr>
+                    <td><code>DashboardView.FeaturedSection</code></td>
+                    <td>AccessibilityIdentifiers.swift</td>
+                </tr><tr>
+                    <td><code>DashboardView.CategoriesSection</code></td>
+                    <td>AccessibilityIdentifiers.swift</td>
+                </tr><tr>
+                    <td><code>DashboardView.DealsSection</code></td>
+                    <td>AccessibilityIdentifiers.swift</td>
+                </tr><tr>
+                    <td><code>DashboardView.NotificationBadge</code></td>
+                    <td>AccessibilityIdentifiers.swift</td>
+                </tr><tr>
+                    <td><code>SearchView.SearchField</code></td>
+                    <td>AccessibilityIdentifiers.swift</td>
+                </tr><tr>
+                    <td><code>SearchView.SearchButton</code></td>
+                    <td>AccessibilityIdentifiers.swift</td>
+                </tr><tr>
+                    <td><code>SearchView.ClearButton</code></td>
+                    <td>AccessibilityIdentifiers.swift</td>
+                </tr><tr>
+                    <td><code>SearchView.FilterButton</code></td>
+                    <td>AccessibilityIdentifiers.swift</td>
+                </tr><tr>
+                    <td><code>SearchView.SortButton</code></td>
+                    <td>AccessibilityIdentifiers.swift</td>
+                </tr><tr>
+                    <td><code>SearchView.ResultsList</code></td>
+                    <td>AccessibilityIdentifiers.swift</td>
+                </tr><tr>
+                    <td><code>SearchView.NoResultsLabel</code></td>
+                    <td>AccessibilityIdentifiers.swift</td>
+                </tr><tr>
+                    <td><code>SearchView.RecentSearchesList</code></td>
+                    <td>AccessibilityIdentifiers.swift</td>
+                </tr><tr>
+                    <td><code>ProductDetail.NameLabel</code></td>
+                    <td>AccessibilityIdentifiers.swift</td>
+                </tr><tr>
+                    <td><code>ProductDetail.PriceLabel</code></td>
+                    <td>AccessibilityIdentifiers.swift</td>
+                </tr><tr>
+                    <td><code>ProductDetail.DescriptionLabel</code></td>
+                    <td>AccessibilityIdentifiers.swift</td>
+                </tr><tr>
+                    <td><code>ProductDetail.ImageView</code></td>
+                    <td>AccessibilityIdentifiers.swift</td>
+                </tr><tr>
+                    <td><code>ProductDetail.AddToCartButton</code></td>
+                    <td>AccessibilityIdentifiers.swift</td>
+                </tr></tbody>
+            </table>
+            <p class="note">Showing 20 of 61 unused identifiers</p>
+            <p class="json-ref">See <a href="accessibility_ids.json">accessibility_ids.json</a> →
+               <code>unused_identifiers</code> for complete list</p>
+        </section>
+        
+        <section id="test-plans">
+            <h2>Test Plans</h2>
+            <h3>Overview</h3>
+            <div class="stat-row">
+                <span class="stat-label">Total Test Plans</span>
+                <span class="stat-value">15</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Unique Tests in Plans</span>
+                <span class="stat-value">380</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Tests in Multiple Plans</span>
+                <span class="stat-value">380</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Orphaned Tests</span>
+                <span class="stat-value">431</span>
+            </div>
+            <p class="json-ref">Complete data: <a href="test_plans.json">test_plans.json</a></p>
+
+            <div class="section-divider"></div>
+            <h3>Test Plan Details</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Plan Name</th>
+                        <th>Tests</th>
+                    </tr>
+                </thead>
+                <tbody>
+            <tr>
+                <td><code>Accessibility</code></td>
+                <td>0</td>
+            </tr>
+            <tr>
+                <td><code>CheckoutFlow</code></td>
+                <td>0</td>
+            </tr>
+            <tr>
+                <td><code>FullFunctional</code></td>
+                <td>370</td>
+            </tr>
+            <tr>
+                <td><code>Integration</code></td>
+                <td>0</td>
+            </tr>
+            <tr>
+                <td><code>LoginFlow</code></td>
+                <td>0</td>
+            </tr>
+            <tr>
+                <td><code>NightlyFull</code></td>
+                <td>360</td>
+            </tr>
+            <tr>
+                <td><code>OrderManagement</code></td>
+                <td>0</td>
+            </tr>
+            <tr>
+                <td><code>PaymentProcessing</code></td>
+                <td>0</td>
+            </tr>
+            <tr>
+                <td><code>Performance</code></td>
+                <td>0</td>
+            </tr>
+            <tr>
+                <td><code>ProductCatalog</code></td>
+                <td>0</td>
+            </tr>
+            <tr>
+                <td><code>QuickCheck</code></td>
+                <td>0</td>
+            </tr>
+            <tr>
+                <td><code>RegressionTest</code></td>
+                <td>280</td>
+            </tr>
+            <tr>
+                <td><code>SearchFlow</code></td>
+                <td>0</td>
+            </tr>
+            <tr>
+                <td><code>SmokeTest</code></td>
+                <td>60</td>
+            </tr>
+            <tr>
+                <td><code>UserManagement</code></td>
+                <td>0</td>
+            </tr></tbody>
+            </table>
+            <p class="json-ref">See <a href="test_plans.json">test_plans.json</a> →
+               <code>test_plans</code> for complete list</p>
+
+            <div class="section-divider"></div>
+            
+        <h3>Tests in Multiple Plans
+            <span class="badge badge-warning">380</span>
+        </h3>
+        <p>Found <strong>380 tests</strong> that appear in more than one
+           test plan (useful for coverage, watch for redundancy):</p>
+        <table>
+            <thead>
+                <tr><th>Test</th><th>Plan Count</th><th>Plans</th></tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td><code>DashboardTests/testScenario16()</code></td>
+                <td>15</td>
+                <td>Accessibility, CheckoutFlow, FullFunctional, +12 more</td>
+            </tr>
+            <tr>
+                <td><code>DashboardTests/testScenario17()</code></td>
+                <td>15</td>
+                <td>Accessibility, CheckoutFlow, FullFunctional, +12 more</td>
+            </tr>
+            <tr>
+                <td><code>DashboardTests/testScenario18()</code></td>
+                <td>15</td>
+                <td>Accessibility, CheckoutFlow, FullFunctional, +12 more</td>
+            </tr>
+            <tr>
+                <td><code>DashboardTests/testScenario19()</code></td>
+                <td>15</td>
+                <td>Accessibility, CheckoutFlow, FullFunctional, +12 more</td>
+            </tr>
+            <tr>
+                <td><code>DashboardTests/testScenario20()</code></td>
+                <td>15</td>
+                <td>Accessibility, CheckoutFlow, FullFunctional, +12 more</td>
+            </tr>
+            <tr>
+                <td><code>DashboardTests/testScenario21()</code></td>
+                <td>15</td>
+                <td>Accessibility, CheckoutFlow, FullFunctional, +12 more</td>
+            </tr>
+            <tr>
+                <td><code>DashboardTests/testScenario22()</code></td>
+                <td>15</td>
+                <td>Accessibility, CheckoutFlow, FullFunctional, +12 more</td>
+            </tr>
+            <tr>
+                <td><code>DashboardTests/testScenario23()</code></td>
+                <td>15</td>
+                <td>Accessibility, CheckoutFlow, FullFunctional, +12 more</td>
+            </tr>
+            <tr>
+                <td><code>DashboardTests/testScenario24()</code></td>
+                <td>15</td>
+                <td>Accessibility, CheckoutFlow, FullFunctional, +12 more</td>
+            </tr>
+            <tr>
+                <td><code>DashboardTests/testScenario25()</code></td>
+                <td>15</td>
+                <td>Accessibility, CheckoutFlow, FullFunctional, +12 more</td>
+            </tr>
+            <tr>
+                <td><code>SearchTests/testScenario1()</code></td>
+                <td>14</td>
+                <td>Accessibility, CheckoutFlow, Integration, +11 more</td>
+            </tr>
+            <tr>
+                <td><code>SearchTests/testScenario10()</code></td>
+                <td>14</td>
+                <td>Accessibility, CheckoutFlow, Integration, +11 more</td>
+            </tr>
+            <tr>
+                <td><code>SearchTests/testScenario2()</code></td>
+                <td>14</td>
+                <td>Accessibility, CheckoutFlow, Integration, +11 more</td>
+            </tr>
+            <tr>
+                <td><code>SearchTests/testScenario3()</code></td>
+                <td>14</td>
+                <td>Accessibility, CheckoutFlow, Integration, +11 more</td>
+            </tr>
+            <tr>
+                <td><code>SearchTests/testScenario4()</code></td>
+                <td>14</td>
+                <td>Accessibility, CheckoutFlow, Integration, +11 more</td>
+            </tr>
+            <tr>
+                <td><code>SearchTests/testScenario5()</code></td>
+                <td>14</td>
+                <td>Accessibility, CheckoutFlow, Integration, +11 more</td>
+            </tr>
+            <tr>
+                <td><code>SearchTests/testScenario6()</code></td>
+                <td>14</td>
+                <td>Accessibility, CheckoutFlow, Integration, +11 more</td>
+            </tr>
+            <tr>
+                <td><code>SearchTests/testScenario7()</code></td>
+                <td>14</td>
+                <td>Accessibility, CheckoutFlow, Integration, +11 more</td>
+            </tr>
+            <tr>
+                <td><code>SearchTests/testScenario8()</code></td>
+                <td>14</td>
+                <td>Accessibility, CheckoutFlow, Integration, +11 more</td>
+            </tr>
+            <tr>
+                <td><code>SearchTests/testScenario9()</code></td>
+                <td>14</td>
+                <td>Accessibility, CheckoutFlow, Integration, +11 more</td>
+            </tr></tbody>
+        </table>
+        <p class="note">Showing 20 of 380 tests.
+           See <a href="test_plans.json">test_plans.json</a> →
+           <code>tests_in_multiple_plans</code> for complete list.</p>
+            <div class="section-divider"></div>
+            
+        <h3>Orphaned Tests
+            <span class="badge badge-danger">431</span>
+        </h3>
+        <p>Found <strong>431 tests</strong> that exist in test files
+           but are not included in any test plan.
+           These tests will not run in CI unless added to a plan.</p>
+        <p><strong>Orphaned tests by file:</strong></p>
+        <table>
+            <thead><tr><th>File</th><th>Orphaned Tests</th></tr></thead>
+            <tbody><tr><td>SearchTests</td><td>80</td></tr><tr><td>LoginTests</td><td>39</td></tr><tr><td>LoginValidationTests</td><td>34</td></tr><tr><td>UserAuthenticationTests</td><td>30</td></tr><tr><td>DashboardTests</td><td>25</td></tr><tr><td>search_tests</td><td>25</td></tr><tr><td>CartTests</td><td>22</td></tr><tr><td>ProductListTests</td><td>20</td></tr><tr><td>checkout_tests</td><td>18</td></tr><tr><td>LoginFlow_Test1</td><td>15</td></tr><tr><td>LoginFlow_Test2</td><td>15</td></tr><tr><td>ProfileTests</td><td>15</td></tr><tr><td>product_detail_tests</td><td>15</td></tr><tr><td>OrderHistoryTests</td><td>12</td></tr><tr><td>NotificationTests</td><td>10</td></tr><tr><td>PaymentTests</td><td>8</td></tr><tr><td>WishlistTests</td><td>8</td></tr><tr><td>MixedNamingTests</td><td>7</td></tr><tr><td>ReviewTests</td><td>5</td></tr><tr><td>ShippingTests</td><td>5</td></tr><tr><td>ReturnsTests</td><td>3</td></tr><tr><td>TrackingTests</td><td>3</td></tr><tr><td>field_tests</td><td>3</td></tr><tr><td>navigation_tests</td><td>3</td></tr><tr><td>testCase42</td><td>3</td></tr><tr><td>SettingsTests</td><td>2</td></tr><tr><td>button_tests</td><td>2</td></tr><tr><td>layout_tests</td><td>2</td></tr><tr><td>AboutTests</td><td>1</td></tr><tr><td>HelpTests</td><td>1</td></tr></tbody>
+        </table>
+        <p class="json-ref">Complete list: See <a href="test_plans.json">test_plans.json</a> →
+           <code>orphaned_tests</code> array for all 431
+           orphaned test methods</p>
+            <div class="section-divider"></div>
+            
+        <h3>Skipped Tests
+            <span class="badge badge-warning">380</span>
+        </h3>
+        <p>Found <strong>380 skipped test entries</strong>
+           across all test plans.</p>
+        <table>
+            <thead>
+                <tr><th>Test Class</th><th>Skipped</th><th>Sample Tests</th></tr>
+            </thead>
+            <tbody><tr>
+                <td><code>SearchTests</code></td>
+                <td>80</td>
+                <td>testScenario1(), testScenario10(), testScenario11(), +77 more</td>
+            </tr><tr>
+                <td><code>searchtests</code></td>
+                <td>25</td>
+                <td>testScenario1(), testScenario10(), testScenario11(), +22 more</td>
+            </tr><tr>
+                <td><code>CartTests</code></td>
+                <td>22</td>
+                <td>testScenario1(), testScenario10(), testScenario11(), +19 more</td>
+            </tr><tr>
+                <td><code>ProductListTests</code></td>
+                <td>20</td>
+                <td>testScenario1(), testScenario10(), testScenario11(), +17 more</td>
+            </tr><tr>
+                <td><code>checkouttests</code></td>
+                <td>18</td>
+                <td>testScenario1(), testScenario10(), testScenario11(), +15 more</td>
+            </tr><tr>
+                <td><code>LoginFlowTest1</code></td>
+                <td>15</td>
+                <td>testScenario1(), testScenario10(), testScenario11(), +12 more</td>
+            </tr><tr>
+                <td><code>LoginFlowTest2</code></td>
+                <td>15</td>
+                <td>testScenario1(), testScenario10(), testScenario11(), +12 more</td>
+            </tr><tr>
+                <td><code>ProfileTests</code></td>
+                <td>15</td>
+                <td>testScenario1(), testScenario10(), testScenario11(), +12 more</td>
+            </tr><tr>
+                <td><code>productdetailtests</code></td>
+                <td>15</td>
+                <td>testScenario1(), testScenario10(), testScenario11(), +12 more</td>
+            </tr><tr>
+                <td><code>OrderHistoryTests</code></td>
+                <td>12</td>
+                <td>testScenario1(), testScenario10(), testScenario11(), +9 more</td>
+            </tr><tr>
+                <td><code>DashboardTests</code></td>
+                <td>10</td>
+                <td>testScenario16(), testScenario17(), testScenario18(), +7 more</td>
+            </tr><tr>
+                <td><code>NotificationTests</code></td>
+                <td>10</td>
+                <td>testScenario1(), testScenario10(), testScenario2(), +7 more</td>
+            </tr><tr>
+                <td><code>PaymentTests</code></td>
+                <td>8</td>
+                <td>testScenario1(), testScenario2(), testScenario3(), +5 more</td>
+            </tr><tr>
+                <td><code>WishlistTests</code></td>
+                <td>8</td>
+                <td>testScenario1(), testScenario2(), testScenario3(), +5 more</td>
+            </tr><tr>
+                <td><code>ReturnsTests</code></td>
+                <td>5</td>
+                <td>testScenario1(), testScenario2(), testScenario3(), +2 more</td>
+            </tr><tr>
+                <td><code>ReviewTests</code></td>
+                <td>5</td>
+                <td>testScenario1(), testScenario2(), testScenario3(), +2 more</td>
+            </tr><tr>
+                <td><code>ShippingTests</code></td>
+                <td>5</td>
+                <td>testScenario1(), testScenario2(), testScenario3(), +2 more</td>
+            </tr><tr>
+                <td><code>AcceptanceTests</code></td>
+                <td>3</td>
+                <td>testScenario1(), testScenario2(), testScenario3()</td>
+            </tr><tr>
+                <td><code>AccessibilityTests</code></td>
+                <td>3</td>
+                <td>testScenario1(), testScenario2(), testScenario3()</td>
+            </tr><tr>
+                <td><code>CheckoutFlows</code></td>
+                <td>3</td>
+                <td>testScenario1(), testScenario2(), testScenario3()</td>
+            </tr></tbody>
+        </table>
+        <p class="note">Showing 20 of 54 files</p>
+        <p class="json-ref">See <a href="test_plans.json">test_plans.json</a> →
+           <code>skipped_tests</code> for complete list</p>
+        </section>
+        
+        
+        <section id="recommendations">
+            <h2>Recommendations</h2>
+            
+                <div class="recommendation">
+                    <h4>Split Large Test Files</h4>
+                    <p>3 file(s) contain more than
+                       30 tests.
+                       Consider splitting for better maintainability:</p>
+                    <ul><li><code>SearchTests.swift</code> (80 tests)</li><li><code>LoginTests.swift</code> (39 tests)</li><li><code>LoginValidationTests.swift</code> (34 tests)</li></ul>
+                </div>
+                <div class="recommendation">
+                    <h4>Standardize File Naming</h4>
+                    <p>Test file naming is only 72.4% consistent with
+                       the <code>[Feature]Tests.swift</code> pattern.
+                       Found 16 files with inconsistent naming:</p>
+                    <ul><li><code>CheckoutFlows.swift</code></li><li><code>CheckoutValidations.swift</code></li><li><code>FeatureValidation.swift</code></li><li><code>LoginFlow_Test1.swift</code></li><li><code>LoginFlow_Test2.swift</code></li><li><em>...and 11 more</em></li></ul>
+                    <p class="json-ref">See <a href="test_inventory.json">test_inventory.json</a> →
+                       <code>test_files</code> for complete list</p>
+                </div>
+                <div class="recommendation">
+                    <h4>Refine Generic Accessibility IDs</h4>
+                    <p>The following IDs are used very frequently
+                       and may be too generic:</p>
+                    <ul><li><code>Done</code> (150 uses)</li><li><code>Cancel</code> (58 uses)</li></ul>
+                    <p>Consider using more specific, context-aware identifiers.</p>
+                </div>
+                <div class="recommendation">
+                    <h4>Remove Unused Accessibility IDs</h4>
+                    <p>61 identifier(s) are defined but never used in tests:</p>
+                    <ul><li><code>LoginView.BiometricButton</code></li><li><code>DashboardView.CartButton</code></li><li><code>DashboardView.ProfileButton</code></li><li><code>DashboardView.FeaturedSection</code></li><li><code>DashboardView.CategoriesSection</code></li><li><code>DashboardView.DealsSection</code></li><li><code>DashboardView.NotificationBadge</code></li><li><code>SearchView.SearchField</code></li><li><code>SearchView.SearchButton</code></li><li><code>SearchView.ClearButton</code></li><li><em>...and 51 more</em></li></ul>
+                    <p>Consider removing these or adding test coverage.</p>
+                </div>
+                <div class="recommendation critical">
+                    <h4>Add Orphaned Tests to Plans</h4>
+                    <p>431 tests are not included in any test plan.
+                       Top affected files:</p>
+                    <ul><li><code>SearchTests</code> (80 orphaned tests)</li><li><code>LoginTests</code> (39 orphaned tests)</li><li><code>LoginValidationTests</code> (34 orphaned tests)</li><li><code>UserAuthenticationTests</code> (30 orphaned tests)</li><li><code>DashboardTests</code> (25 orphaned tests)</li><li><code>search_tests</code> (25 orphaned tests)</li><li><code>CartTests</code> (22 orphaned tests)</li><li><code>ProductListTests</code> (20 orphaned tests)</li><li><code>checkout_tests</code> (18 orphaned tests)</li><li><code>LoginFlow_Test1</code> (15 orphaned tests)</li><li><em>...and 20 more files</em></li></ul>
+                    <p>See <strong>Orphaned Tests</strong> section above
+                       for complete list.</p>
+                </div>
+                <div class="recommendation">
+                    <h4>Review Tests in Multiple Plans</h4>
+                    <p>380 tests appear in more than one test plan.
+                       Verify this is intentional:</p>
+                    <ul><li><code>DashboardTests/testScenario16()</code> appears in 15 plans</li><li><code>DashboardTests/testScenario17()</code> appears in 15 plans</li><li><code>DashboardTests/testScenario18()</code> appears in 15 plans</li><li><code>DashboardTests/testScenario19()</code> appears in 15 plans</li><li><code>DashboardTests/testScenario20()</code> appears in 15 plans</li><li><em>...and 375 more</em></li></ul>
+                    <p>This may be intentional (e.g., smoke tests also in
+                       regression), but could indicate redundant test execution.</p>
+                    <p class="json-ref">See <a href="test_plans.json">test_plans.json</a> →
+                       <code>tests_in_multiple_plans</code> for complete list</p>
+                </div>
+                <div class="recommendation">
+                    <h4>Review Skipped Tests</h4>
+                    <p>Found 380 skipped tests.
+                       Verify these tests should remain skipped:</p>
+                    <ul><li><code>AboutTests/testScenario1()</code></li><li><code>AcceptanceTests/testScenario1()</code></li><li><code>AcceptanceTests/testScenario2()</code></li><li><code>AcceptanceTests/testScenario3()</code></li><li><code>AccessibilityTests/testScenario1()</code></li><li><em>...and 375 more</em></li></ul>
+                    <p>Skipped tests may indicate:</p>
+                    <ul>
+                        <li>Tests that are flaky or unreliable</li>
+                        <li>Tests for features not yet implemented</li>
+                        <li>Tests that need to be fixed or removed</li>
+                    </ul>
+                    <p class="json-ref">See <a href="test_plans.json">test_plans.json</a> →
+                       <code>skipped_tests</code> for details</p>
+                </div>
+        </section>
+        <footer>Generated by <strong>iOS Test Optimizer</strong></footer>
+    </div>
+</body>
+</html>

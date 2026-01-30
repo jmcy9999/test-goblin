@@ -1,0 +1,47 @@
+{
+  "$comment": "iOS Test Optimizer - Configurable Thresholds",
+  "$schema": "Configuration file for recommendation thresholds",
+
+  "test_inventory": {
+    "large_file_threshold": 30,
+    "_comment": "Files with more tests than this trigger 'Split Large Files' recommendation"
+  },
+
+  "test_file_naming": {
+    "pattern": "[Feature]Tests.swift",
+    "consistency_threshold": 90.0,
+    "_comment": "pattern: Expected file naming pattern. Set to null to skip analysis. consistency_threshold: Below this % triggers recommendation."
+  },
+
+  "test_method_naming": {
+    "pattern": "camelCase",
+    "consistency_threshold": 85.0,
+    "_comment": "pattern: Expected method naming style (camelCase, snake_case, BDD). Set to null to skip analysis. consistency_threshold: Below this % triggers recommendation."
+  },
+
+  "accessibility_ids": {
+    "generic_id_usage_threshold": 50,
+    "centralization_threshold": 50.0,
+    "unused_ids_threshold": 0,
+    "_comment": "generic_id_usage_threshold: IDs used more than this trigger 'Refine Generic IDs'. centralization_threshold: Below this % triggers 'Centralize IDs'. unused_ids_threshold: More than this triggers 'Remove Unused IDs' recommendation."
+  },
+
+  "test_plans": {
+    "orphaned_tests_threshold": 0,
+    "multi_plan_tests_threshold": 0,
+    "skipped_tests_threshold": 0,
+    "overlap_threshold": 10.0,
+    "_comment": "orphaned/multi_plan/skipped: > threshold triggers recommendations. overlap: < threshold triggers 'Review Coverage'"
+  },
+
+  "screen_graph": {
+    "navigator_adoption_threshold": 80.0,
+    "_comment": "Below this percentage triggers 'Increase Navigator Adoption' recommendation"
+  },
+
+  "report": {
+    "max_items_in_summary": 20,
+    "max_items_before_collapse": 50,
+    "_comment": "max_items_in_summary: Items shown in tables/lists. max_items_before_collapse: Show all items if count <= this, otherwise summarize"
+  }
+}
