@@ -1,5 +1,10 @@
 # XCUITest Goblin
 
+[![Tests](https://github.com/jmcy9999/xcuitest-goblin/actions/workflows/test.yml/badge.svg)](https://github.com/jmcy9999/xcuitest-goblin/actions/workflows/test.yml)
+[![PyPI version](https://badge.fury.io/py/xcuitest-goblin.svg)](https://pypi.org/project/xcuitest-goblin/)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 **Find orphaned tests, inconsistent naming, overused identifiers, bloated test files, and more — in under 1 second.**
 
 A zero-dependency CLI tool that analyzes your iOS XCUITest suite and surfaces actionable recommendations to keep your tests healthy.
