@@ -233,10 +233,14 @@ class TestInventoryAnalyzer(BaseAnalyzer):
             expected_suffix = configured_pattern
 
         # Check how many files follow the configured pattern
+        # Accept both "Test.swift" (singular) and "Tests.swift" (plural)
         follows_convention = 0
         for file_data in file_data_list:
             file_name = file_data["file_name"]
             if file_name.endswith(expected_suffix):
+                follows_convention += 1
+            elif expected_suffix == "Tests.swift" and file_name.endswith("Test.swift"):
+                # Also accept singular "Test.swift" when pattern expects "Tests.swift"
                 follows_convention += 1
 
         total_files = len(file_data_list)

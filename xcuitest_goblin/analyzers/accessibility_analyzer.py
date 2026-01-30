@@ -310,8 +310,17 @@ class AccessibilityAnalyzer(BaseAnalyzer):
 
         for match in matches:
             id_value = match.group(1)
-            if id_value in self.identifiers:
-                self.identifiers[id_value]["defined_in"].add(file_name)
+            # Create entry if it doesn't exist (for identifiers defined but not used in tests)
+            if id_value not in self.identifiers:
+                self.identifiers[id_value] = {
+                    "id": id_value,
+                    "usage_count": 0,
+                    "defined_in": set(),
+                    "used_in_tests": set(),
+                    "element_types": set(),
+                    "is_centralized": False,
+                }
+            self.identifiers[id_value]["defined_in"].add(file_name)
 
     def _detect_naming_convention(self, id_value: str) -> str:
         """
